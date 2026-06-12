@@ -103,7 +103,7 @@ export abstract class WebviewProvider {
 		// Tip: Install the es6-string-html VS Code extension to enable code highlighting below
 		return /*html*/ `
 			<!DOCTYPE html>
-			<html lang="en">
+			<html lang="fa" dir="rtl">
 				<head>
 				<meta charset="utf-8">
 				<meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no">
@@ -208,7 +208,7 @@ export abstract class WebviewProvider {
 
 		return /*html*/ `
 			<!DOCTYPE html>
-			<html lang="en">
+			<html lang="fa" dir="rtl">
 				<head>
 					${process.env.IS_DEV ? '<script src="http://localhost:8097"></script>' : ""}
 					<meta charset="utf-8">

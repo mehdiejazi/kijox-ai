@@ -66,25 +66,39 @@ export const Navbar = () => {
 
 	return (
 		<nav
-			className="flex-none inline-flex justify-end bg-transparent gap-2 mb-1 z-10 border-none items-center mr-4!"
+			className="mx-4 mt-4 mb-2 flex items-center justify-between gap-3 rounded-2xl border border-[var(--shell-border-soft)] bg-[color:var(--shell-surface-elevated)]/85 px-3 py-2 shadow-[var(--shell-shadow)] backdrop-blur-xl"
 			id="cline-navbar-container">
+			<div className="flex min-w-0 items-center gap-3">
+				<div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--shell-accent-soft)] text-[color:var(--shell-accent)]">
+					<span className="codicon codicon-sparkle text-lg" />
+				</div>
+				<div className="min-w-0">
+					<div className="truncate text-sm font-semibold text-foreground">Kijox Workspace</div>
+					<div className="truncate text-xs text-muted-foreground">Focused coding with a cleaner control surface</div>
+				</div>
+			</div>
+			<div className="flex items-center gap-1.5">
 			{SETTINGS_TABS.map((tab) => (
 				<Tooltip key={`navbar-tooltip-${tab.id}`}>
 					<TooltipContent side="bottom">{tab.tooltip}</TooltipContent>
 					<TooltipTrigger asChild>
 						<Button
 							aria-label={tab.tooltip}
-							className="p-0 h-7"
+							className="h-9 rounded-xl border border-transparent px-2.5 text-muted-foreground hover:border-[var(--shell-border-soft)] hover:bg-[color:var(--shell-accent-soft)] hover:text-foreground"
 							data-testid={`tab-${tab.id}`}
 							key={`navbar-button-${tab.id}`}
 							onClick={() => tab.navigate()}
-							size="icon"
-							variant="icon">
-							<tab.icon className="stroke-1 [svg]:size-4" size={18} />
+							size="sm"
+							variant="ghost">
+							<div className="flex items-center gap-1.5">
+								<tab.icon className="stroke-1 [svg]:size-4" size={18} />
+								<span className="hidden text-xs font-medium md:inline">{tab.name}</span>
+							</div>
 						</Button>
 					</TooltipTrigger>
 				</Tooltip>
 			))}
+			</div>
 		</nav>
 	)
 }

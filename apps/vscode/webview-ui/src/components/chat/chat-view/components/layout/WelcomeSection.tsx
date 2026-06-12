@@ -251,7 +251,7 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
 	}, [bannerConfig, banners, clineUser, handleBannerAction, handleBannerDismiss])
 
 	return (
-		<div className="flex flex-col flex-1 w-full h-full p-0 m-0">
+		<div className="flex h-full w-full flex-1 flex-col p-0 m-0">
 			<WhatsNewModal
 				onBannerAction={handleBannerAction}
 				onClose={handleCloseWhatsNewModal}
@@ -259,12 +259,16 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
 				version={version}
 				welcomeBanners={welcomeBanners}
 			/>
-			<div className="overflow-y-auto flex flex-col pb-2.5">
+			<div className="flex flex-col overflow-y-auto pb-4">
 				<HomeHeader shouldShowQuickWins={shouldShowQuickWins} />
 				{!showWhatsNewModal && (
 					<>
 						<BannerCarousel banners={activeBanners} />
-						{!shouldShowQuickWins && taskHistory.length > 0 && <HistoryPreview showHistoryView={showHistoryView} />}
+						{!shouldShowQuickWins && taskHistory.length > 0 && (
+							<div className="mx-5 mt-1 rounded-[24px] border border-[var(--shell-border-soft)] bg-[color:var(--shell-surface)]/70 px-1 py-1">
+								<HistoryPreview showHistoryView={showHistoryView} />
+							</div>
+						)}
 						{/* Quick launch worktree button */}
 						{isGitRepo && worktreesEnabled?.featureFlag && worktreesEnabled?.user && (
 							<div className="flex flex-col items-center gap-3 mt-2 mb-4 px-5">
@@ -314,7 +318,11 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
 					</>
 				)}
 			</div>
-			<SuggestedTasks shouldShowQuickWins={shouldShowQuickWins} />
+			<div className="px-5 pb-4">
+				<div className="rounded-[24px] border border-[var(--shell-border-soft)] bg-[color:var(--shell-surface)]/78 shadow-[var(--shell-shadow)]">
+					<SuggestedTasks shouldShowQuickWins={shouldShowQuickWins} />
+				</div>
+			</div>
 
 			{/* Quick launch worktree modal */}
 			<CreateWorktreeModal

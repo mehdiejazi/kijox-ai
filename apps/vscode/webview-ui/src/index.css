@@ -2,6 +2,29 @@
 @import url("../../node_modules/@vscode/codicons/dist/codicon.css");
 @import url("../node_modules/@fontsource/azeret-mono/index.css");
 
+@font-face {
+	font-family: "iransansxv";
+	src:
+		url("./fonts/IRANSansXV.woff") format("woff-variations"),
+		url("./fonts/IRANSansXV.woff") format("woff");
+	font-weight: 100 900;
+	font-display: fallback;
+}
+
+@font-face {
+	font-family: "iransansx";
+	src: url("./fonts/IRANSansX-Regular.woff") format("woff");
+	font-weight: normal;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: "iransansx";
+	src: url("./fonts/IRANSansX-Bold.woff") format("woff");
+	font-weight: bold;
+	font-style: normal;
+}
+
 /* Tailwind CSS */
 @import "tailwindcss";
 @import "./theme.css";
@@ -18,6 +41,9 @@
 	}
 	body {
 		@apply bg-background text-foreground;
+		font-family: "iransansxv", "iransansx", sans-serif;
+		direction: rtl;
+		text-align: start;
 	}
 	p {
 		@apply my-0 py-0 text-inherit leading-5 block line-clamp-3;
@@ -34,9 +60,13 @@
 	}
 	pre {
 		@apply bg-code;
+		direction: ltr;
+		text-align: left;
 	}
 	code {
 		@apply bg-code;
+		direction: ltr;
+		text-align: left;
 	}
 	h1 {
 		font-size: var(--text-lg);

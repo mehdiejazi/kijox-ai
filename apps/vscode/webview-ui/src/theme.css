@@ -1,6 +1,6 @@
 /* Editor theme mapping */
 @theme {
-	--color-cline: #9663f1;
+	--color-cline: #0f766e;
 	--color-background: var(--vscode-sideBar-background);
 	--color-border: var(--vscode-focusBorder);
 	--color-border-panel: var(--vscode-panel-border);
@@ -93,6 +93,16 @@
 	--radius-half: 50%;
 	--radius-xs: 2px;
 	--breakpoint-xxs: 180px;
+	--shell-surface: color-mix(in srgb, var(--vscode-sideBar-background) 88%, white 12%);
+	--shell-surface-elevated: color-mix(in srgb, var(--vscode-editor-background) 72%, white 28%);
+	--shell-border-soft: color-mix(in srgb, var(--vscode-focusBorder) 22%, transparent);
+	--shell-accent: color-mix(in srgb, #14b8a6 72%, var(--vscode-terminal-ansiYellow) 28%);
+	--shell-accent-soft: color-mix(in srgb, var(--shell-accent) 16%, transparent);
+	--shell-glow: color-mix(in srgb, #f59e0b 18%, transparent);
+	--shell-shadow: 0 22px 60px color-mix(in srgb, black 22%, transparent);
+	--shell-grid:
+		linear-gradient(to right, color-mix(in srgb, var(--vscode-foreground) 4%, transparent) 1px, transparent 1px),
+		linear-gradient(to bottom, color-mix(in srgb, var(--vscode-foreground) 4%, transparent) 1px, transparent 1px);
 
 	--animate-fade-in: fadeIn 0.4s ease-out forwards;
 	@keyframes fadeIn {
@@ -357,5 +367,32 @@
 			content: "";
 			@apply inline-block w-0.5 h-[1em] ml-0.5 bg-foreground align-text-bottom animate-cursor-blink;
 		}
+	}
+
+	.app-shell-bg {
+		background:
+			radial-gradient(circle at top right, var(--shell-glow) 0, transparent 28%),
+			radial-gradient(circle at top left, var(--shell-accent-soft) 0, transparent 34%),
+			var(--shell-grid);
+		background-size:
+			auto,
+			auto,
+			26px 26px;
+	}
+
+	.glass-panel {
+		background: color-mix(in srgb, var(--shell-surface) 90%, transparent);
+		border: 1px solid var(--shell-border-soft);
+		box-shadow: var(--shell-shadow);
+		backdrop-filter: blur(18px);
+	}
+
+	.soft-panel {
+		background: linear-gradient(
+			180deg,
+			color-mix(in srgb, var(--shell-surface-elevated) 96%, transparent),
+			color-mix(in srgb, var(--shell-surface) 94%, transparent)
+		);
+		border: 1px solid color-mix(in srgb, var(--shell-border-soft) 72%, transparent);
 	}
 }

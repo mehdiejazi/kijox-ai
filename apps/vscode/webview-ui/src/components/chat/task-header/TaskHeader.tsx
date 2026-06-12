@@ -113,7 +113,7 @@ const TaskHeader: React.FC<TaskHeaderProps> = ({
 	const environmentBorderColor = getEnvironmentColor(environment, "border")
 
 	return (
-		<div className="py-2 px-4 flex flex-col gap-2">
+		<div className="flex flex-col gap-3 px-4 py-3">
 			{/* Display Checkpoint Error */}
 			<CheckpointError
 				checkpointManagerErrorMessage={checkpointManagerErrorMessage}
@@ -122,14 +122,14 @@ const TaskHeader: React.FC<TaskHeaderProps> = ({
 			{/* Task Header */}
 			<div
 				className={cn(
-					"relative overflow-hidden cursor-pointer rounded-sm flex flex-col gap-1.5 z-10 pt-2 pb-2 px-2 hover:opacity-100 bg-(--vscode-toolbar-hoverBackground)/65",
+					"relative z-10 flex cursor-pointer flex-col gap-2 overflow-hidden rounded-[24px] border px-4 py-3 shadow-[var(--shell-shadow)] transition-all",
 					{
-						"opacity-100 border-1": isTaskExpanded, // No hover effects when expanded, add border
-						"hover:bg-toolbar-hover border-1": !isTaskExpanded, // Hover effects only when collapsed
+						"bg-[color:var(--shell-surface-elevated)]/92 opacity-100": isTaskExpanded,
+						"bg-[color:var(--shell-surface)]/76 hover:bg-[color:var(--shell-surface-elevated)]/86": !isTaskExpanded,
 					},
 				)}
 				style={{
-					borderColor: environmentBorderColor,
+					borderColor: environmentBorderColor || "var(--shell-border-soft)",
 				}}>
 				{/* Task Title */}
 				<div
@@ -144,10 +144,10 @@ const TaskHeader: React.FC<TaskHeaderProps> = ({
 						}
 					}}
 					tabIndex={0}>
-					<div className="flex justify-between items-center">
+					<div className="flex items-center justify-between gap-2">
 						{isTaskExpanded ? <ChevronDownIcon size="16" /> : <ChevronRightIcon size="16" />}
 						{isTaskExpanded && (
-							<div className="mt-1 flex justify-end cursor-pointer opacity-80 gap-2 mx-2">
+							<div className="mx-2 mt-1 flex cursor-pointer justify-end gap-2 opacity-80">
 								<CopyTaskButton className={BUTTON_CLASS} taskText={task.text} />
 								<DeleteTaskButton
 									className={BUTTON_CLASS}
@@ -161,19 +161,22 @@ const TaskHeader: React.FC<TaskHeaderProps> = ({
 							</div>
 						)}
 					</div>
-					<div className="flex items-center select-none grow min-w-0 gap-1 justify-between">
+					<div className="flex min-w-0 grow items-center justify-between gap-2 select-none">
 						{!isTaskExpanded && (
-							<div className="whitespace-nowrap overflow-hidden text-ellipsis grow min-w-0">
-								<span className="ph-no-capture text-base">{highlightedText}</span>
+							<div className="min-w-0 grow overflow-hidden text-ellipsis whitespace-nowrap">
+								<div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+									Active Task
+								</div>
+								<span className="ph-no-capture text-sm font-medium text-foreground">{highlightedText}</span>
 							</div>
 						)}
 					</div>
-					<div className="inline-flex items-center justify-end select-none shrink-0">
+					<div className="inline-flex shrink-0 select-none items-center justify-end gap-2">
 						{isCostAvailable && (
 							<div
-								className="mx-1 px-1 py-0.25 rounded-full inline-flex shrink-0 text-badge-background bg-badge-foreground/80 items-center"
+								className="inline-flex shrink-0 items-center rounded-full border border-[var(--shell-border-soft)] bg-[color:var(--shell-accent-soft)] px-2 py-1 text-[color:var(--shell-accent)]"
 								id="price-tag">
-								<span className="text-xs sm:text-sm">${totalCost?.toFixed(4)}</span>
+								<span className="text-xs font-semibold sm:text-sm">${totalCost?.toFixed(4)}</span>
 							</div>
 						)}
 						<NewTaskButton className={BUTTON_CLASS} onClick={onClose} />
@@ -185,7 +188,7 @@ const TaskHeader: React.FC<TaskHeaderProps> = ({
 					<div className="flex flex-col break-words" key={`task-details-${currentTaskItem?.id}`}>
 						<div
 							className={cn(
-								"ph-no-capture whitespace-pre-wrap break-words px-0.5 text-sm mt-1 relative",
+								"ph-no-capture relative mt-1 whitespace-pre-wrap break-words px-0.5 text-sm leading-6 text-foreground/92",
 								"max-h-[4.5rem] overflow-hidden",
 								{
 									"max-h-[25vh] overflow-y-auto scroll-smooth": isHighlightedTextExpanded,
@@ -206,19 +209,23 @@ const TaskHeader: React.FC<TaskHeaderProps> = ({
 						</div>
 
 						{((task.images && task.images.length > 0) || (task.files && task.files.length > 0)) && (
-							<Thumbnails files={task.files ?? []} images={task.images ?? []} />
+							<div className="mt-2 rounded-2xl border border-[var(--shell-border-soft)] bg-[color:var(--shell-surface)]/72 p-2">
+								<Thumbnails files={task.files ?? []} images={task.images ?? []} />
+							</div>
 						)}
 
-						<ContextWindow
-							cacheReads={cacheReads}
-							cacheWrites={cacheWrites}
-							contextWindow={selectedModelInfo?.contextWindow}
-							lastApiReqTotalTokens={lastApiReqTotalTokens}
-							onSendMessage={onSendMessage}
-							tokensIn={tokensIn}
-							tokensOut={tokensOut}
-							useAutoCondense={false} // Disable auto-condense configuration in UI for now
-						/>
+						<div className="mt-2 rounded-2xl border border-[var(--shell-border-soft)] bg-[color:var(--shell-surface)]/72 p-2">
+							<ContextWindow
+								cacheReads={cacheReads}
+								cacheWrites={cacheWrites}
+								contextWindow={selectedModelInfo?.contextWindow}
+								lastApiReqTotalTokens={lastApiReqTotalTokens}
+								onSendMessage={onSendMessage}
+								tokensIn={tokensIn}
+								tokensOut={tokensOut}
+								useAutoCondense={false} // Disable auto-condense configuration in UI for now
+							/>
+						</div>
 					</div>
 				)}
 			</div>

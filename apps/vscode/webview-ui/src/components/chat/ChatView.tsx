@@ -331,7 +331,7 @@ const ChatView = ({ isHidden, showAnnouncement, hideAnnouncement, showHistoryVie
 
 	return (
 		<ChatLayout isHidden={isHidden}>
-			<div className="flex flex-col flex-1 overflow-hidden">
+			<div className="flex flex-1 flex-col overflow-hidden">
 				{showNavbar && <Navbar />}
 				{task ? (
 					<TaskSection
@@ -368,7 +368,9 @@ const ChatView = ({ isHidden, showAnnouncement, hideAnnouncement, showHistoryVie
 					/>
 				)}
 			</div>
-			<footer className="bg-(--vscode-sidebar-background)" style={{ gridRow: "2" }}>
+			<footer
+				className="mx-auto mb-3 w-[calc(100%-24px)] max-w-[1160px] rounded-[24px] border border-[var(--shell-border-soft)] bg-[color:var(--shell-surface-elevated)]/92 px-3 pb-3 pt-2 shadow-[var(--shell-shadow)] backdrop-blur-xl"
+				style={{ gridRow: "2" }}>
 				<AutoApproveBar />
 				<ActionButtons
 					chatState={chatState}

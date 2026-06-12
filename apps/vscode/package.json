@@ -582,6 +582,8 @@
 		"shell-quote": "^1.8.3",
 		"simple-git": "3.36.0",
 		"strip-ansi": "^7.1.2",
+		"lru-cache": "^6.0.0",
+		"tailspin": "^1.1.0",
 		"tailwindcss": "^4.1.14",
 		"tree-sitter-wasms": "^0.1.11",
 		"ts-morph": "^25.0.1",

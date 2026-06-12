@@ -373,7 +373,18 @@
 		},
 		"configuration": {
 			"title": "Cline",
-			"properties": {}
+			"properties": {
+				"kijox.customBaseUrl": {
+					"type": "string",
+					"default": "https://api.avalai.ir/v1",
+					"description": "Custom base URL used for Kijox OpenAI-compatible requests."
+				},
+				"kijox.enableCustomModels": {
+					"type": "boolean",
+					"default": true,
+					"description": "Allow custom model IDs for Kijox OpenAI-compatible requests."
+				}
+			}
 		}
 	},
 	"scripts": {

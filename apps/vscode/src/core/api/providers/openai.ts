@@ -3,6 +3,7 @@ import { azureOpenAiDefaultApiVersion, ModelInfo, OpenAiCompatibleModelInfo, ope
 import { normalizeOpenaiReasoningEffort } from "@shared/storage/types"
 import OpenAI, { AzureOpenAI } from "openai"
 import type { ChatCompletionReasoningEffort, ChatCompletionTool } from "openai/resources/chat/completions"
+import * as vscode from "vscode"
 import { buildExternalBasicHeaders } from "@/services/EnvUtils"
 import { ClineStorageMessage } from "@/shared/messages/content"
 import { createOpenAIClient, fetch } from "@/shared/net"
@@ -39,26 +40,29 @@ export class OpenAiHandler implements ApiHandler {
 		return "https://cognitiveservices.azure.com/.default"
 	}
 
+	private getConfiguredBaseUrl(): string | undefined {
+		const configuredBaseUrl = vscode.workspace.getConfiguration("kijox").get<string>("customBaseUrl")?.trim()
+		return configuredBaseUrl || this.options.openAiBaseUrl
+	}
+
 	private ensureClient(): OpenAI {
 		if (!this.client) {
 			if (!this.options.openAiApiKey && !this.options.azureIdentity) {
 				throw new Error("OpenAI API key or Azure Identity Authentication is required")
 			}
 			try {
-				const baseUrl = this.options.openAiBaseUrl?.toLowerCase() ?? ""
+				const resolvedBaseUrl = this.getConfiguredBaseUrl()
+				const baseUrl = resolvedBaseUrl?.toLowerCase() ?? ""
 				const isAzureDomain = baseUrl.includes("azure.com") || baseUrl.includes("azure.us")
 				const externalHeaders = buildExternalBasicHeaders()
 				// Azure API shape slightly differs from the core API shape...
-				if (
-					this.options.azureApiVersion ||
-					(isAzureDomain && !this.options.openAiModelId?.toLowerCase().includes("deepseek"))
-				) {
+				if (this.options.azureApiVersion || isAzureDomain) {
 					if (this.options.azureIdentity) {
 						this.client = new AzureOpenAI({
-							baseURL: this.options.openAiBaseUrl,
+							baseURL: resolvedBaseUrl,
 							azureADTokenProvider: getBearerTokenProvider(
 								new DefaultAzureCredential(),
-								this.getAzureAudienceScope(this.options.openAiBaseUrl),
+								this.getAzureAudienceScope(resolvedBaseUrl),
 							),
 							apiVersion: this.options.azureApiVersion || azureOpenAiDefaultApiVersion,
 							defaultHeaders: {
@@ -69,7 +73,7 @@ export class OpenAiHandler implements ApiHandler {
 						})
 					} else {
 						this.client = new AzureOpenAI({
-							baseURL: this.options.openAiBaseUrl,
+							baseURL: resolvedBaseUrl,
 							apiKey: this.options.openAiApiKey,
 							apiVersion: this.options.azureApiVersion || azureOpenAiDefaultApiVersion,
 							defaultHeaders: {
@@ -81,7 +85,7 @@ export class OpenAiHandler implements ApiHandler {
 					}
 				} else {
 					this.client = createOpenAIClient({
-						baseURL: this.options.openAiBaseUrl,
+						baseURL: resolvedBaseUrl,
 						apiKey: this.options.openAiApiKey,
 						defaultHeaders: this.options.openAiHeaders,
 					})
@@ -96,11 +100,7 @@ export class OpenAiHandler implements ApiHandler {
 	@withRetry()
 	async *createMessage(systemPrompt: string, messages: ClineStorageMessage[], tools?: ChatCompletionTool[]): ApiStream {
 		const client = this.ensureClient()
-		const modelId = this.options.openAiModelId ?? ""
-		const isDeepseekReasoner = modelId.includes("deepseek-reasoner")
 		const isR1FormatRequired = this.options.openAiModelInfo?.isR1FormatRequired ?? false
-		const isReasoningModelFamily =
-			["o1", "o3", "o4", "gpt-5"].some((prefix) => modelId.includes(prefix)) && !modelId.includes("chat")
 
 		let openAiMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
 			{ role: "system", content: systemPrompt },
@@ -122,19 +122,14 @@ export class OpenAiHandler implements ApiHandler {
 			maxTokens = undefined
 		}
 
-		if (isDeepseekReasoner || isR1FormatRequired) {
+		if (isR1FormatRequired) {
 			openAiMessages = convertToR1Format([{ role: "user", content: systemPrompt }, ...messages])
 		}
-
-		if (isReasoningModelFamily) {
-			openAiMessages = [{ role: "developer", content: systemPrompt }, ...convertToOpenAiMessages(messages)]
-			temperature = undefined // does not support temperature
-			const requestedEffort = normalizeOpenaiReasoningEffort(this.options.reasoningEffort)
-			reasoningEffort = requestedEffort === "none" ? undefined : (requestedEffort as ChatCompletionReasoningEffort)
-		}
+		const requestedEffort = normalizeOpenaiReasoningEffort(this.options.reasoningEffort)
+		reasoningEffort = requestedEffort === "none" ? undefined : (requestedEffort as ChatCompletionReasoningEffort)
 
 		const stream = await client.chat.completions.create({
-			model: modelId,
+			model: this.options.openAiModelId ?? "",
 			messages: openAiMessages,
 			temperature,
 			max_tokens: maxTokens,

@@ -1,8 +1,11 @@
 import { ApiConfiguration, ModelInfo, QwenApiRegions } from "@shared/api"
 import { Mode } from "@shared/storage/types"
 import { ClineStorageMessage } from "@/shared/messages/content"
+import { getLatestTerminalOutput } from "@/hosts/vscode/terminal/get-latest-output"
 import { Logger } from "@/shared/services/Logger"
 import { ClineTool } from "@/shared/tools"
+import * as vscode from "vscode"
+import { cache, compressLog, getRelevantFunction, slidingWindow } from "../context/contextOptimizer"
 import { AIhubmixHandler } from "./providers/aihubmix"
 import { AnthropicHandler } from "./providers/anthropic"
 import { AskSageHandler } from "./providers/asksage"
@@ -71,6 +74,110 @@ export interface ApiProviderInfo {
 
 export interface SingleCompletionHandler {
 	completePrompt(prompt: string): Promise<string>
+}
+
+function getMessageText(message: ClineStorageMessage | undefined): string {
+	if (!message) {
+		return ""
+	}
+
+	if (typeof message.content === "string") {
+		return message.content
+	}
+
+	return message.content
+		.map((block) => ("text" in block && typeof block.text === "string" ? block.text : ""))
+		.filter(Boolean)
+		.join("\n")
+}
+
+function getLastUserQuery(messages: ClineStorageMessage[]): string {
+	for (let i = messages.length - 1; i >= 0; i--) {
+		if (messages[i].role !== "user") {
+			continue
+		}
+
+		const text = getMessageText(messages[i]).trim()
+		if (!text) {
+			continue
+		}
+
+		return text.split(/\r?\n/).map((line) => line.trim()).find(Boolean)?.slice(0, 200) ?? text.slice(0, 200)
+	}
+
+	return ""
+}
+
+async function buildOptimizedMessages(messages: ClineStorageMessage[]): Promise<ClineStorageMessage[]> {
+	const optimizedMessages = slidingWindow(messages, 10)
+	const additions: string[] = []
+
+	try {
+		const terminalLog = await getLatestTerminalOutput()
+		const compressedTerminalLog = compressLog(terminalLog, 200)
+		if (compressedTerminalLog) {
+			additions.push(`<terminal_output>\n${compressedTerminalLog}\n</terminal_output>`)
+		}
+	} catch (error) {
+		Logger.error("Failed to optimize terminal log before API call:", error)
+	}
+
+	try {
+		const activeEditor = vscode.window.activeTextEditor
+		const document = activeEditor?.document
+		const query = getLastUserQuery(optimizedMessages)
+
+		if (document && query) {
+			const cacheKey = `relevant-function:${document.uri.toString()}:${query}`
+			let relevantSnippet = cache.get(cacheKey)
+
+			if (!relevantSnippet) {
+				const relevantFunction = getRelevantFunction(document.getText(), query, 5)
+				relevantSnippet = relevantFunction
+					? `Lines ${relevantFunction.startLine}-${relevantFunction.endLine}\n${relevantFunction.snippet}`
+					: ""
+				if (relevantSnippet) {
+					cache.set(cacheKey, relevantSnippet)
+				}
+			}
+
+			if (relevantSnippet) {
+				additions.push(`<relevant_function path="${document.uri.fsPath}">\n${relevantSnippet}\n</relevant_function>`)
+			}
+		}
+	} catch (error) {
+		Logger.error("Failed to optimize active file context before API call:", error)
+	}
+
+	if (additions.length === 0) {
+		return optimizedMessages
+	}
+
+	return [
+		...optimizedMessages,
+		{
+			role: "user",
+			content: additions.join("\n\n"),
+		},
+	]
+}
+
+function wrapApiHandler(handler: ApiHandler): ApiHandler {
+	return {
+		createMessage(systemPrompt: string, messages: ClineStorageMessage[], tools?: ClineTool[], useResponseApi?: boolean): ApiStream {
+			const run = async function* (): ApiStream {
+				const optimizedMessages = await buildOptimizedMessages(messages)
+				yield* handler.createMessage(systemPrompt, optimizedMessages, tools, useResponseApi)
+			}
+
+			return run()
+		},
+		getModel() {
+			return handler.getModel()
+		},
+		getApiStreamUsage: handler.getApiStreamUsage?.bind(handler),
+		abort: handler.abort?.bind(handler),
+	}
 }
 
 function createHandlerForProvider(
@@ -496,12 +603,12 @@ export function buildApiHandler(configuration: ApiConfiguration, mode: Mode): Ap
 					options.actModeThinkingBudgetTokens = clippedValue
 				}
 			} else {
-				return handler // don't rebuild unless its necessary
+				return wrapApiHandler(handler) // don't rebuild unless its necessary
 			}
 		}
 	} catch (error) {
 		Logger.error("buildApiHandler error:", error)
 	}
 
-	return createHandlerForProvider(apiProvider, options, mode)
+	return wrapApiHandler(createHandlerForProvider(apiProvider, options, mode))
 }

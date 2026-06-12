@@ -1,10 +1,11 @@
 import { ApiConfiguration, ModelInfo, QwenApiRegions } from "@shared/api"
 import { Mode } from "@shared/storage/types"
+import { readFile } from "fs/promises"
 import { ClineStorageMessage } from "@/shared/messages/content"
+import { HostProvider } from "@/hosts/host-provider"
 import { getLatestTerminalOutput } from "@/hosts/vscode/terminal/get-latest-output"
 import { Logger } from "@/shared/services/Logger"
 import { ClineTool } from "@/shared/tools"
-import * as vscode from "vscode"
 import { cache, compressLog, getRelevantFunction, slidingWindow } from "../context/contextOptimizer"
 import { AIhubmixHandler } from "./providers/aihubmix"
 import { AnthropicHandler } from "./providers/anthropic"
@@ -123,16 +124,17 @@ async function buildOptimizedMessages(messages: ClineStorageMessage[]): Promise<
 	}
 
 	try {
-		const activeEditor = vscode.window.activeTextEditor
-		const document = activeEditor?.document
+		const activeEditor = HostProvider.isInitialized() ? await HostProvider.window.getActiveEditor({}) : undefined
+		const filePath = activeEditor?.filePath
 		const query = getLastUserQuery(optimizedMessages)
 
-		if (document && query) {
-			const cacheKey = `relevant-function:${document.uri.toString()}:${query}`
+		if (filePath && query) {
+			const cacheKey = `relevant-function:${filePath}:${query}`
 			let relevantSnippet = cache.get(cacheKey)
 
 			if (!relevantSnippet) {
-				const relevantFunction = getRelevantFunction(document.getText(), query, 5)
+				const documentText = await readFile(filePath, "utf8")
+				const relevantFunction = getRelevantFunction(documentText, query, 5)
 				relevantSnippet = relevantFunction
 					? `Lines ${relevantFunction.startLine}-${relevantFunction.endLine}\n${relevantFunction.snippet}`
 					: ""
@@ -142,7 +144,7 @@ async function buildOptimizedMessages(messages: ClineStorageMessage[]): Promise<
 			}
 
 			if (relevantSnippet) {
-				additions.push(`<relevant_function path="${document.uri.fsPath}">\n${relevantSnippet}\n</relevant_function>`)
+				additions.push(`<relevant_function path="${filePath}">\n${relevantSnippet}\n</relevant_function>`)
 			}
 		}
 	} catch (error) {
